@@ -1,34 +1,64 @@
 require('dotenv').config();
 const express = require('express'), crypto = require('crypto'), path = require('path');
-const { DatabaseSync } = require('node:sqlite'); // built into Node 22+, nothing to compile
+const { DatabaseSync } = require('node:sqlite'); // built into Node 22+, nothing to compile (used for the local-file database)
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
-const E = process.env, PORT = E.PORT || 3000, BASE = E.BASE_URL || `http://localhost:${PORT}`;
+const E = process.env, PORT = E.PORT || 3000, BASE = E.BASE_URL || E.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`; // Render fills RENDER_EXTERNAL_URL in automatically
 const RATE = +E.KES_PER_USD || 130;
 
 
-const db = new DatabaseSync(E.DB_FILE || 'academy.db');
-db.exec(`
-CREATE TABLE IF NOT EXISTS students(id INTEGER PRIMARY KEY, name TEXT, email TEXT, location TEXT, phone TEXT,
-  learner_type TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS enrollments(ref TEXT PRIMARY KEY, student_id INTEGER, course TEXT, day TEXT, time TEXT,
-  amount_kes INTEGER, method TEXT, status TEXT DEFAULT 'pending', provider_ref TEXT, receipt TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP, paid_at TEXT, kind TEXT DEFAULT 'enrollment', note TEXT);`);
-
-for (const col of ["kind TEXT DEFAULT 'enrollment'", 'note TEXT']) { // upgrade older databases
-  try { db.exec('ALTER TABLE enrollments ADD COLUMN ' + col); } catch (e) { /* column already exists */ }
+// ---------- Database: a local file (default) or a free hosted Turso database ----------
+// Set TURSO_DATABASE_URL + TURSO_AUTH_TOKEN to use Turso (needed on hosts with no persistent disk, e.g. Render free).
+const dbFile = E.DB_FILE || 'academy.db';
+let lite = null, turso = null;
+if (E.TURSO_DATABASE_URL) {
+  const { createClient } = require('@libsql/client/web');
+  turso = createClient({ url: E.TURSO_DATABASE_URL, authToken: E.TURSO_AUTH_TOKEN });
+} else {
+  try { fs.mkdirSync(path.dirname(path.resolve(dbFile)), { recursive: true }); } catch (e) { /* reported below if it matters */ }
+  try { lite = new DatabaseSync(dbFile); } catch (e) {
+    console.error(`\n❌ Cannot open the database at "${dbFile}": ${e.message}\n   On Render with a paid plan: add a Disk mounted at /data and set DB_FILE=/data/academy.db.\n   On a free plan: use a free Turso database instead (set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN).\n`);
+    process.exit(1);
+  }
 }
+async function dbRun(kind, sql, args) {
+  args = args.map((v) => (v === undefined ? null : v));
+  if (lite) return lite.prepare(sql)[kind](...args);
+  const r = await turso.execute({ sql, args });
+  const rows = () => r.rows.map((row) => Object.fromEntries(r.columns.map((col, i) => [col, row[i]])));
+  if (kind === 'get') return rows()[0];
+  if (kind === 'all') return rows();
+  return { changes: r.rowsAffected, lastInsertRowid: Number(r.lastInsertRowid ?? 0) };
+}
+const db = {
+  exec: async (sql) => { if (lite) lite.exec(sql); else await turso.execute(sql); },
+  prepare: (sql) => ({ get: (...a) => dbRun('get', sql, a), all: (...a) => dbRun('all', sql, a), run: (...a) => dbRun('run', sql, a) }),
+};
 
-db.exec(`CREATE TABLE IF NOT EXISTS courses(id INTEGER PRIMARY KEY, section TEXT, name TEXT UNIQUE, icon TEXT, description TEXT,
-  audience TEXT DEFAULT 'Adults', price INTEGER, old_price INTEGER, duration TEXT, active INTEGER DEFAULT 1, sort INTEGER DEFAULT 0);`);
-if (!db.prepare('SELECT COUNT(*) AS c FROM courses').get().c) { // first run: load the starting course list (prices are then edited from /admin)
-  const ins = db.prepare('INSERT INTO courses(section,name,icon,description,audience,price,old_price,duration,sort) VALUES(?,?,?,?,?,?,?,?,?)');
-  JSON.parse(fs.readFileSync(path.join(__dirname, 'courses.seed.json'), 'utf8')).forEach((r, i) =>
-    ins.run(r.section, r.name, r.icon, r.description, r.audience, r.price, r.old_price ?? null, r.duration, i));
+async function init() {
+  for (const stmt of [
+    `CREATE TABLE IF NOT EXISTS students(id INTEGER PRIMARY KEY, name TEXT, email TEXT, location TEXT, phone TEXT, learner_type TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS enrollments(ref TEXT PRIMARY KEY, student_id INTEGER, course TEXT, day TEXT, time TEXT, amount_kes INTEGER, method TEXT, status TEXT DEFAULT 'pending', provider_ref TEXT, receipt TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, paid_at TEXT, kind TEXT DEFAULT 'enrollment', note TEXT)`,
+    `CREATE TABLE IF NOT EXISTS courses(id INTEGER PRIMARY KEY, section TEXT, name TEXT UNIQUE, icon TEXT, description TEXT, audience TEXT DEFAULT 'Adults', price INTEGER, old_price INTEGER, duration TEXT, active INTEGER DEFAULT 1, sort INTEGER DEFAULT 0)`,
+  ]) await db.exec(stmt);
+  for (const col of ["kind TEXT DEFAULT 'enrollment'", 'note TEXT']) { // upgrade older databases
+    try { await db.exec('ALTER TABLE enrollments ADD COLUMN ' + col); } catch (e) { /* column already exists */ }
+  }
+  if (!(await db.prepare('SELECT COUNT(*) AS c FROM courses').get()).c) { // first run: load the starting course list (prices are then edited from /admin)
+    const ins = db.prepare('INSERT INTO courses(section,name,icon,description,audience,price,old_price,duration,sort) VALUES(?,?,?,?,?,?,?,?,?)');
+    const rows = JSON.parse(fs.readFileSync(path.join(__dirname, 'courses.seed.json'), 'utf8'));
+    for (let i = 0; i < rows.length; i++) { const r = rows[i]; await ins.run(r.section, r.name, r.icon, r.description, r.audience, r.price, r.old_price ?? null, r.duration, i); }
+  }
 }
 
 const app = express();
+for (const m of ['get', 'post', 'put', 'delete']) { // wrap async handlers so a failure returns an error instead of hanging
+  const orig = app[m].bind(app);
+  app[m] = (p, ...fns) => fns.length === 0 ? orig(p) : orig(p, ...fns.map((f) => f && f.constructor && f.constructor.name === 'AsyncFunction'
+    ? (req, res, next) => f(req, res, next).catch((err) => { console.error(`${m.toUpperCase()} ${req.path} failed:`, err.message); if (!res.headersSent) res.status(500).json({ error: 'Something went wrong. Please try again.' }); }) : f));
+}
+app.set('trust proxy', 1); // behind Render's load balancer: use the visitor's real IP for the rate limits
 const safeEq = (a, b) => { a = Buffer.from(String(a)); b = Buffer.from(String(b)); return a.length === b.length && crypto.timingSafeEqual(a, b); };
 const bearer = (req) => (req.headers.authorization || '').replace('Bearer ', '');
 
@@ -39,11 +69,20 @@ const mailer = E.SMTP_USER && E.SMTP_PASS ? nodemailer.createTransport({
   tls: { rejectUnauthorized: E.SMTP_ALLOW_SELF_SIGNED !== 'true' } }) : null; // see .env.example
 const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 async function mail(to, subject, html, replyTo, attachments) {
-  if (!mailer) return console.log('[email not configured] would send: ' + subject);
-  try { await mailer.sendMail({ from: `"${BRAND}" <${E.SMTP_USER}>`, to, subject, html, replyTo, attachments }); }
-  catch (err) { console.error('Email failed:', err.message); }
+  try {
+    if (E.RESEND_API_KEY) { // email over HTTPS: works on hosts that block SMTP (e.g. Render free)
+      if (!E.MAIL_FROM && String(to).toLowerCase() !== OWNER.toLowerCase()) return console.log('[skipped: Resend without a verified domain can only email the owner] ' + subject);
+      const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: 'Bearer ' + E.RESEND_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: E.MAIL_FROM || `${BRAND} <onboarding@resend.dev>`, to: [to], subject, html, reply_to: replyTo,
+          attachments: (attachments || []).map((a) => ({ filename: a.filename, content: Buffer.from(a.content).toString('base64') })) }) });
+      if (!r.ok) throw new Error(`Resend ${r.status}: ${(await r.text()).slice(0, 200)}`);
+      return;
+    }
+    if (!mailer) return console.log('[email not configured] would send: ' + subject);
+    await mailer.sendMail({ from: `"${BRAND}" <${E.SMTP_USER}>`, to, subject, html, replyTo, attachments });
+  } catch (err) { console.error('Email failed:', err.message); }
 }
-const enr = (ref) => db.prepare(`SELECT e.*, s.name, s.email, s.phone, s.location, s.learner_type
+const enr = async (ref) => await db.prepare(`SELECT e.*, s.name, s.email, s.phone, s.location, s.learner_type
   FROM enrollments e JOIN students s ON s.id=e.student_id WHERE e.ref=?`).get(ref);
 function table(e) {
   const rows = [['Reference', e.ref], ['Status', e.status], ['Course', e.course], ['Amount', 'KES ' + e.amount_kes.toLocaleString()],
@@ -84,13 +123,13 @@ function receiptPdf(e) {
     doc.end();
   });
 }
-function notifyNew(ref) {
-  const e = enr(ref), d = e.kind === 'donation';
+async function notifyNew(ref) {
+  const e = await enr(ref), d = e.kind === 'donation';
   mail(OWNER, d ? `New donation (awaiting payment): KES ${e.amount_kes.toLocaleString()} from ${e.name}` : `New enrolment (awaiting payment): ${e.name} – ${e.course}`,
     `<h3>${d ? 'New donation' : 'New enrolment'}</h3>${table(e)}`, e.email);
 }
 async function onPaid(ref) {
-  const e = enr(ref), d = e.kind === 'donation', first = esc(e.name.split(' ')[0]);
+  const e = await enr(ref), d = e.kind === 'donation', first = esc(e.name.split(' ')[0]);
   console.log(`PAID ${ref}: ${e.name} -> ${e.course} (KES ${e.amount_kes})`);
   const att = [{ filename: `receipt-${ref}.pdf`, content: await receiptPdf(e), contentType: 'application/pdf' }];
   mail(OWNER, d ? `💛 DONATION RECEIVED: KES ${e.amount_kes.toLocaleString()} from ${e.name}` : `✅ PAID: ${e.name} – ${e.course} (KES ${e.amount_kes.toLocaleString()})`,
@@ -100,37 +139,38 @@ async function onPaid(ref) {
     : `<p>Hi ${first}, your payment was received and your spot is confirmed. Your receipt is attached.</p>${table(e)}
     <p>We'll send your class link before your first session. Questions? WhatsApp +254768578725 or +254780502456.</p><p>– ${BRAND}</p>`, undefined, att);
 }
-function markPaid(ref, receipt = '') {
-  const r = db.prepare(`UPDATE enrollments SET status='paid', paid_at=CURRENT_TIMESTAMP, receipt=? WHERE ref=? AND status!='paid'`).run(receipt, ref);
+async function markPaid(ref, receipt = '') {
+  const r = await db.prepare(`UPDATE enrollments SET status='paid', paid_at=CURRENT_TIMESTAMP, receipt=? WHERE ref=? AND status!='paid'`).run(receipt, ref);
   if (r.changes) onPaid(ref).catch((err) => console.error('onPaid failed:', err.message));
 }
 
 // ---------- Webhooks (raw body needed for signatures, so these come before express.json) ----------
-app.post('/api/paystack/webhook', express.raw({ type: '*/*' }), (req, res) => {
+app.post('/api/paystack/webhook', express.raw({ type: '*/*' }), async (req, res) => {
   const sig = crypto.createHmac('sha512', E.PAYSTACK_SECRET || '').update(req.body).digest('hex');
   if (!safeEq(sig, req.headers['x-paystack-signature'] || '')) return res.sendStatus(401);
   const ev = JSON.parse(req.body);
-  const row = ev.event === 'charge.success' && db.prepare('SELECT amount_kes FROM enrollments WHERE ref=?').get(ev.data.reference);
-  if (row && ev.data.currency === psCur() && ev.data.amount === psAmount(row.amount_kes)) markPaid(ev.data.reference, String(ev.data.id || ''));
+  const row = ev.event === 'charge.success' && await db.prepare('SELECT amount_kes FROM enrollments WHERE ref=?').get(ev.data.reference);
+  if (row && ev.data.currency === psCur() && ev.data.amount === psAmount(row.amount_kes)) await markPaid(ev.data.reference, String(ev.data.id || ''));
   else if (row) console.error('Paystack amount/currency mismatch for', ev.data.reference);
   res.sendStatus(200);
 });
 
 const sortKeys = (o) => Array.isArray(o) ? o.map(sortKeys) : o && typeof o === 'object'
   ? Object.keys(o).sort().reduce((a, k) => (a[k] = sortKeys(o[k]), a), {}) : o;
-app.post('/api/nowpayments/ipn', express.json(), (req, res) => {
+app.post('/api/nowpayments/ipn', express.json(), async (req, res) => {
   const sig = crypto.createHmac('sha512', E.NOWPAYMENTS_IPN_SECRET || '').update(JSON.stringify(sortKeys(req.body))).digest('hex');
   if (!safeEq(sig, req.headers['x-nowpayments-sig'] || '')) return res.sendStatus(401);
-  if (req.body.payment_status === 'finished') markPaid(req.body.order_id, String(req.body.payment_id || ''));
+  if (req.body.payment_status === 'finished') await markPaid(req.body.order_id, String(req.body.payment_id || ''));
   res.sendStatus(200);
 });
 
-app.post('/api/mpesa/callback', express.json(), (req, res) => {
+app.post('/api/mpesa/callback', express.json(), async (req, res) => {
   if (!safeEq(req.query.s || '', E.MPESA_CB_SECRET || 'x')) return res.sendStatus(401); // Daraja doesn't sign callbacks
   const cb = req.body?.Body?.stkCallback;
   if (cb) {
-    const row = db.prepare('SELECT ref FROM enrollments WHERE provider_ref=?').get(cb.CheckoutRequestID);
-    if (row) cb.ResultCode === 0 ? markPaid(row.ref, ((cb.CallbackMetadata?.Item || []).find((i) => i.Name === 'MpesaReceiptNumber') || {}).Value || '') : db.prepare(`UPDATE enrollments SET status='failed' WHERE ref=? AND status='pending'`).run(row.ref);
+    const row = await db.prepare('SELECT ref FROM enrollments WHERE provider_ref=?').get(cb.CheckoutRequestID);
+    if (row && cb.ResultCode === 0) await markPaid(row.ref, ((cb.CallbackMetadata?.Item || []).find((i) => i.Name === 'MpesaReceiptNumber') || {}).Value || '');
+    else if (row) await db.prepare(`UPDATE enrollments SET status='failed' WHERE ref=? AND status='pending'`).run(row.ref);
   }
   res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
 });
@@ -185,7 +225,7 @@ async function pay(res, ref, b, amount, email, phone) {
     if (b.method === 'mpesa' && mpesaViaPaystack()) return res.json({ ref, redirect_url: await paystackInit(ref, email, amount, ['mobile_money']) });
     if (b.method === 'mpesa') {
       const id = await mpesaStk(ref, amount, phone);
-      db.prepare('UPDATE enrollments SET provider_ref=? WHERE ref=?').run(id, ref);
+      await db.prepare('UPDATE enrollments SET provider_ref=? WHERE ref=?').run(id, ref);
       return res.json({ ref, message: 'Check your phone and enter your M-Pesa PIN…' });
     }
     if (b.method === 'card') return res.json({ ref, redirect_url: await paystackInit(ref, email, amount) }); // no channel filter: Paystack shows whatever your account has enabled
@@ -193,7 +233,7 @@ async function pay(res, ref, b, amount, email, phone) {
     res.json({ ref, message: `Send $${(amount / RATE).toFixed(2)} via Airtm to ${E.AIRTM_PAYEE_EMAIL || "our Airtm account (see WhatsApp)"} with reference ${ref}. We'll confirm manually.` });
   } catch (err) {
     console.error(`PAYMENT START FAILED [${b.method}] ${ref}: ${err.message}`); // the real reason from Paystack/Safaricom shows here
-    db.prepare(`UPDATE enrollments SET status='failed' WHERE ref=?`).run(ref);
+    await db.prepare(`UPDATE enrollments SET status='failed' WHERE ref=?`).run(ref);
     res.status(502).json({ error: 'Payment could not be started. Please try again.' });
   }
 }
@@ -210,7 +250,7 @@ app.post('/api/enroll', async (req, res) => {
   const n = (hits.get(req.ip) || 0) + 1; hits.set(req.ip, n); setTimeout(() => hits.delete(req.ip), 60000);
   if (n > 8) return res.status(429).json({ error: 'Too many attempts, try again in a minute.' });
   const b = req.body || {}, s = (v) => String(v || '').trim().slice(0, 120);
-  const course = db.prepare('SELECT price FROM courses WHERE name=? AND active=1').get(String(b.course || ''));
+  const course = await db.prepare('SELECT price FROM courses WHERE name=? AND active=1').get(String(b.course || ''));
   const amount = course && course.price; // price always comes from the database, never from the browser
   if (!amount) return res.status(400).json({ error: 'Unknown course.' });
   if (!methodsOn().includes(b.method)) return res.status(400).json({ error: 'That payment method is not available right now.' });
@@ -221,11 +261,11 @@ app.post('/api/enroll', async (req, res) => {
   if (b.method === 'mpesa' && !mpesaViaPaystack()) { phone = mpesaPhone(b); if (!phone) return res.status(400).json({ error: 'Enter a valid M-Pesa number.' }); }
   else if (!['mpesa', 'card', 'crypto', 'airtm'].includes(b.method)) return res.status(400).json({ error: 'Choose a payment method.' });
 
-  const st = db.prepare('INSERT INTO students(name,email,location,phone,learner_type) VALUES(?,?,?,?,?)')
+  const st = await db.prepare('INSERT INTO students(name,email,location,phone,learner_type) VALUES(?,?,?,?,?)')
     .run(s(b.name), s(b.email), s(b.location), s(b.phone), s(b.learner_type));
-  db.prepare('INSERT INTO enrollments(ref,student_id,course,day,time,amount_kes,method) VALUES(?,?,?,?,?,?,?)')
+  await db.prepare('INSERT INTO enrollments(ref,student_id,course,day,time,amount_kes,method) VALUES(?,?,?,?,?,?,?)')
     .run(ref, st.lastInsertRowid, b.course, s(b.day), s(b.time), amount, b.method);
-  notifyNew(ref);
+  await notifyNew(ref);
   return pay(res, ref, b, amount, s(b.email), phone);
 });
 
@@ -240,10 +280,10 @@ app.post('/api/donate', async (req, res) => {
   let phone = '';
   if (b.method === 'mpesa' && !mpesaViaPaystack()) { phone = mpesaPhone(b); if (!phone) return res.status(400).json({ error: 'Enter a valid M-Pesa number.' }); }
   const ref = 'DON-' + crypto.randomBytes(6).toString('hex').toUpperCase();
-  const st = db.prepare('INSERT INTO students(name,email,location,phone,learner_type) VALUES(?,?,?,?,?)').run(s(b.name) || 'Anonymous friend', s(b.email), '', s(b.phone), 'Donor');
-  db.prepare("INSERT INTO enrollments(ref,student_id,course,day,time,amount_kes,method,kind,note) VALUES(?,?,'Donation','','',?,?,'donation',?)")
+  const st = await db.prepare('INSERT INTO students(name,email,location,phone,learner_type) VALUES(?,?,?,?,?)').run(s(b.name) || 'Anonymous friend', s(b.email), '', s(b.phone), 'Donor');
+  await db.prepare("INSERT INTO enrollments(ref,student_id,course,day,time,amount_kes,method,kind,note) VALUES(?,?,'Donation','','',?,?,'donation',?)")
     .run(ref, st.lastInsertRowid, amount, b.method, s(b.message, 200));
-  notifyNew(ref);
+  await notifyNew(ref);
   return pay(res, ref, b, amount, s(b.email), phone);
 });
 
@@ -252,19 +292,19 @@ const rcHits = new Map();
 app.get('/api/receipt/:ref', async (req, res) => {
   const n = (rcHits.get(req.ip) || 0) + 1; rcHits.set(req.ip, n); setTimeout(() => rcHits.delete(req.ip), 60000);
   if (n > 30) return res.status(429).send('Too many requests');
-  const e = enr(String(req.params.ref).slice(0, 40));
+  const e = await enr(String(req.params.ref).slice(0, 40));
   if (!e || e.status !== 'paid') return res.sendStatus(404);
   res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="receipt-${e.ref}.pdf"`, 'Cache-Control': 'no-store' });
   res.send(await receiptPdf(e));
 });
 
-app.get('/api/courses', (req, res) => {
+app.get('/api/courses', async (req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ rate: RATE, methods: methodsOn(), courses: db.prepare('SELECT id,section,name,icon,description,audience,price,old_price,duration FROM courses WHERE active=1 ORDER BY sort,id').all() });
+  res.json({ rate: RATE, methods: methodsOn(), courses: await db.prepare('SELECT id,section,name,icon,description,audience,price,old_price,duration FROM courses WHERE active=1 ORDER BY sort,id').all() });
 });
 
-app.get('/api/status/:ref', (req, res) => {
-  const r = db.prepare('SELECT status, course FROM enrollments WHERE ref=?').get(req.params.ref);
+app.get('/api/status/:ref', async (req, res) => {
+  const r = await db.prepare('SELECT status, course FROM enrollments WHERE ref=?').get(req.params.ref);
   r ? res.json(r) : res.sendStatus(404);
 });
 
@@ -278,13 +318,13 @@ const admin = (req, res, next) => {
   res.sendStatus(401);
 };
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/api/admin/enrollments', admin, (req, res) => res.json(db.prepare(
+app.get('/api/admin/enrollments', admin, async (req, res) => res.json(await db.prepare(
   `SELECT e.ref,e.course,e.day,e.time,e.amount_kes,e.method,e.status,e.receipt,e.created_at,e.paid_at,s.name,s.email,s.phone,s.location,s.learner_type
    FROM enrollments e JOIN students s ON s.id=e.student_id WHERE e.kind='enrollment' ORDER BY e.created_at DESC`).all()));
-app.get('/api/admin/donations', admin, (req, res) => res.json(db.prepare(
+app.get('/api/admin/donations', admin, async (req, res) => res.json(await db.prepare(
   `SELECT e.ref,e.amount_kes,e.method,e.status,e.receipt,e.note,e.created_at,e.paid_at,s.name,s.email,s.phone
    FROM enrollments e JOIN students s ON s.id=e.student_id WHERE e.kind='donation' ORDER BY e.created_at DESC`).all()));
-app.post('/api/admin/confirm/:ref', admin, (req, res) => { markPaid(req.params.ref); res.json({ ok: true }); }); // for Airtm / manual payments
+app.post('/api/admin/confirm/:ref', admin, async (req, res) => { await markPaid(req.params.ref); res.json({ ok: true }); }); // for Airtm / manual payments
 
 // ---------- Admin: courses & prices ----------
 const cl = (v, n) => String(v ?? '').trim().slice(0, n);
@@ -294,29 +334,32 @@ function courseFields(b) {
     old_price: +b.old_price > 0 ? Math.round(+b.old_price) : null, duration: cl(b.duration, 20), active: b.active === false || b.active === 0 ? 0 : 1 };
   return f.section && f.name.length >= 2 && f.price >= 50 && f.price <= 1000000 ? f : null;
 }
-app.get('/api/admin/courses', admin, (req, res) => res.json(db.prepare('SELECT * FROM courses ORDER BY sort,id').all()));
-app.post('/api/admin/courses', admin, (req, res) => {
+app.get('/api/admin/courses', admin, async (req, res) => res.json(await db.prepare('SELECT * FROM courses ORDER BY sort,id').all()));
+app.post('/api/admin/courses', admin, async (req, res) => {
   const f = courseFields(req.body || {}); if (!f) return res.status(400).json({ error: 'Check the course details (name, section and a price of at least 50).' });
   try {
-    const r = db.prepare('INSERT INTO courses(section,name,icon,description,audience,price,old_price,duration,active,sort) VALUES(?,?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort),0)+1 FROM courses))')
+    const r = await db.prepare('INSERT INTO courses(section,name,icon,description,audience,price,old_price,duration,active,sort) VALUES(?,?,?,?,?,?,?,?,?,(SELECT COALESCE(MAX(sort),0)+1 FROM courses))')
       .run(f.section, f.name, f.icon, f.description, f.audience, f.price, f.old_price, f.duration, f.active);
     res.json({ id: Number(r.lastInsertRowid) });
   } catch (e) { res.status(409).json({ error: 'A course with that name already exists.' }); }
 });
-app.put('/api/admin/courses/:id', admin, (req, res) => {
+app.put('/api/admin/courses/:id', admin, async (req, res) => {
   const f = courseFields(req.body || {}); if (!f) return res.status(400).json({ error: 'Check the course details (name, section and a price of at least 50).' });
   try {
-    db.prepare('UPDATE courses SET section=?,name=?,icon=?,description=?,audience=?,price=?,old_price=?,duration=?,active=? WHERE id=?')
+    await db.prepare('UPDATE courses SET section=?,name=?,icon=?,description=?,audience=?,price=?,old_price=?,duration=?,active=? WHERE id=?')
       .run(f.section, f.name, f.icon, f.description, f.audience, f.price, f.old_price, f.duration, f.active, +req.params.id);
     res.json({ ok: true });
   } catch (e) { res.status(409).json({ error: 'A course with that name already exists.' }); }
 });
-app.delete('/api/admin/courses/:id', admin, (req, res) => { db.prepare('DELETE FROM courses WHERE id=?').run(+req.params.id); res.json({ ok: true }); });
+app.delete('/api/admin/courses/:id', admin, async (req, res) => { await db.prepare('DELETE FROM courses WHERE id=?').run(+req.params.id); res.json({ ok: true }); });
 
-app.listen(PORT, () => {
+init().then(() => app.listen(PORT, () => {
+  console.log(turso ? 'Database: Turso (hosted)' : `Database: ${dbFile}`);
   console.log(`The StartHub BootCamp Academy running on ${BASE}`);
   if (E.TEST_MODE === 'true') console.log('⚠️  TEST MODE ON: payments are simulated. Remove TEST_MODE before going live.');
   if (E.SMTP_ALLOW_SELF_SIGNED === 'true') console.log('⚠️  SMTP_ALLOW_SELF_SIGNED is on: email certificate checks are off. For local testing only.');
   if (!E.ADMIN_TOKEN || E.ADMIN_TOKEN.startsWith('change-me')) console.log('⚠️  Set a strong ADMIN_TOKEN in .env to protect /admin');
-  if (!mailer) console.log('⚠️  Email not configured: set SMTP_USER and SMTP_PASS in .env');
-});
+  if (BASE.includes('localhost') && E.RENDER) console.log('⚠️  BASE_URL points to localhost: set BASE_URL to your public https address');
+  if (E.RENDER && !turso && !(E.DB_FILE || '').startsWith('/data')) console.log('⚠️  DB_FILE is not on a persistent disk: student data will be lost on redeploy. Set DB_FILE=/data/academy.db and add a disk at /data');
+  if (!mailer && !E.RESEND_API_KEY) console.log('⚠️  Email not configured: set SMTP_USER and SMTP_PASS in .env');
+})).catch((err) => { console.error('Start-up failed:', err.message); process.exit(1); });
