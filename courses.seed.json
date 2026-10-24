@@ -1,0 +1,332 @@
+[
+ {
+  "section": "hacking",
+  "icon": "🌐",
+  "name": "Cybersecurity Foundations",
+  "description": "How networks, threats and defences work.",
+  "audience": "Adults",
+  "price": 5500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🐧",
+  "name": "Linux & Kali Essentials",
+  "description": "Master the terminal and the hacker's toolkit.",
+  "audience": "Adults",
+  "price": 4500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🕸️",
+  "name": "Web App Hacking",
+  "description": "Find and fix XSS, SQL injection and more.",
+  "audience": "Adults",
+  "price": 5500,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "📡",
+  "name": "Wi-Fi & Network Security",
+  "description": "Test and harden wireless and LAN setups.",
+  "audience": "Adults",
+  "price": 9000,
+  "old_price": null,
+  "duration": "5 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🔍",
+  "name": "OSINT & Recon",
+  "description": "Gather public intel the ethical way.",
+  "audience": "Adults",
+  "price": 4500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🚩",
+  "name": "CTF Training Camp",
+  "description": "Hands-on capture-the-flag challenges.",
+  "audience": "Adults",
+  "price": 8000,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🤖",
+  "name": "AI & Prompt Injection Security",
+  "description": "How attackers trick AI chatbots, and how to defend LLM apps.",
+  "audience": "Adults",
+  "price": 6500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "📍",
+  "name": "Location Privacy & Geolocation OSINT",
+  "description": "Python geolocation from IPs and photo data, plus protecting privacy. Consent-based only.",
+  "audience": "Adults",
+  "price": 5500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🐍",
+  "name": "Python for Ethical Hackers",
+  "description": "Write your own scanners and security tools in Python.",
+  "audience": "Adults",
+  "price": 6500,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🎣",
+  "name": "Social Engineering & Phishing Defense",
+  "description": "Spot, simulate (with permission) and stop phishing attacks.",
+  "audience": "Adults",
+  "price": 4500,
+  "old_price": null,
+  "duration": "3 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🐞",
+  "name": "Bug Bounty Hunting",
+  "description": "Find real vulnerabilities and report them for rewards.",
+  "audience": "Adults",
+  "price": 8500,
+  "old_price": null,
+  "duration": "8 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🔬",
+  "name": "Digital Forensics Basics",
+  "description": "Investigate incidents and recover digital evidence.",
+  "audience": "Adults",
+  "price": 6500,
+  "old_price": null,
+  "duration": "5 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "📱",
+  "name": "Mobile App Security",
+  "description": "Test and secure Android and iOS apps.",
+  "audience": "Adults",
+  "price": 7500,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🔐",
+  "name": "Cryptography & Password Security",
+  "description": "How encryption works and how passwords get protected or broken.",
+  "audience": "Adults",
+  "price": 5000,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🧒",
+  "name": "Cyber Safe Kids",
+  "description": "Passwords, scams and staying safe online.",
+  "audience": "Kids",
+  "price": 2500,
+  "old_price": null,
+  "duration": "3 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🕵️",
+  "name": "Junior Hacker Club",
+  "description": "Fun puzzles, ciphers and safe hacking games.",
+  "audience": "Kids",
+  "price": 3500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🔑",
+  "name": "Secret Codes & Ciphers",
+  "description": "Crack and create secret messages like a real spy.",
+  "audience": "Kids",
+  "price": 3000,
+  "old_price": null,
+  "duration": "3 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🚨",
+  "name": "Spot the Scam",
+  "description": "Learn to spot fake links, fake prizes and online tricks.",
+  "audience": "Kids",
+  "price": 2500,
+  "old_price": null,
+  "duration": "3 wks"
+ },
+ {
+  "section": "hacking",
+  "icon": "🌍",
+  "name": "How the Internet Works",
+  "description": "Discover how computers talk to each other, and stay safe.",
+  "audience": "Kids",
+  "price": 3000,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🐍",
+  "name": "Python",
+  "description": "The friendliest language for beginners & hackers.",
+  "audience": "Adults",
+  "price": 6500,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "⚡",
+  "name": "JavaScript",
+  "description": "Make interactive websites and apps.",
+  "audience": "Adults",
+  "price": 6500,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🎨",
+  "name": "HTML & CSS Web Design",
+  "description": "Build beautiful websites from scratch.",
+  "audience": "Adults",
+  "price": 3000,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🗄️",
+  "name": "SQL & Databases",
+  "description": "Store, query and secure data.",
+  "audience": "Adults",
+  "price": 4500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "☕",
+  "name": "Java",
+  "description": "Solid foundation for apps and enterprise.",
+  "audience": "Adults",
+  "price": 7000,
+  "old_price": null,
+  "duration": "8 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "⚙️",
+  "name": "C / C++",
+  "description": "Understand how computers really work.",
+  "audience": "Adults",
+  "price": 5000,
+  "old_price": null,
+  "duration": "8 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🐱",
+  "name": "Scratch for Kids",
+  "description": "Drag-and-drop games and animations.",
+  "audience": "Kids",
+  "price": 2000,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🚀",
+  "name": "Python for Kids",
+  "description": "Kid-friendly coding with games and bots.",
+  "audience": "Kids",
+  "price": 2500,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🌐",
+  "name": "HTML & CSS for Kids",
+  "description": "Build and style your very first website.",
+  "audience": "Kids",
+  "price": 3000,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🎮",
+  "name": "Game Design for Kids",
+  "description": "Design and code your own playable games.",
+  "audience": "Kids",
+  "price": 3500,
+  "old_price": null,
+  "duration": "5 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🔌",
+  "name": "Arduino & Electronics for Kids",
+  "description": "Build blinking lights, alarms and simple robots.",
+  "audience": "Kids",
+  "price": 4500,
+  "old_price": null,
+  "duration": "6 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "🧠",
+  "name": "AI Adventures for Kids",
+  "description": "Meet AI, train a simple model and learn how it thinks.",
+  "audience": "Kids",
+  "price": 3500,
+  "old_price": null,
+  "duration": "4 wks"
+ },
+ {
+  "section": "coding",
+  "icon": "📱",
+  "name": "App Builder for Kids",
+  "description": "Make your first phone app with drag-and-drop blocks.",
+  "audience": "Kids",
+  "price": 3500,
+  "old_price": null,
+  "duration": "5 wks"
+ },
+ {
+  "section": "package",
+  "icon": "★",
+  "name": "Full Ethical Hacking Package",
+  "description": "Beginner to job-ready, 12 weeks of live classes.",
+  "audience": "Adults",
+  "price": 32000,
+  "old_price": 50000,
+  "duration": "12 wks"
+ }
+]

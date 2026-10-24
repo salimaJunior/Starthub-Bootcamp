@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The StartHub BootCamp Academy · Learn Ethical Hacking & Coding Online</title>
+<style>
+:root{--bg:#070b10;--bg2:#0d141d;--card:#111b27;--tx:#e6f1ff;--mut:#8aa0b8;--ac:#00ff9c;--ac2:#00c8ff;--bd:#1e2d3f;--on:#03140c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f4f8fc;--bg2:#e8eff7;--card:#fff;--tx:#0b1a2b;--mut:#4d6178;--ac:#00935a;--ac2:#0077a8;--bd:#d3deea;--on:#fff}}
+:root[data-theme="light"]{--bg:#f4f8fc;--bg2:#e8eff7;--card:#fff;--tx:#0b1a2b;--mut:#4d6178;--ac:#00935a;--ac2:#0077a8;--bd:#d3deea;--on:#fff}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1100px;margin:auto;padding:0 20px}
+nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-weight:800;letter-spacing:.5px}.logo b{color:var(--ac)}
+nav .links{display:flex;gap:18px;font-size:14px;color:var(--mut)}
+nav .links a:hover{color:var(--ac)}
+@media(max-width:700px){nav .links{display:none}}
+.btn{display:inline-block;border:0;cursor:pointer;font:inherit;font-weight:700;padding:11px 22px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--ac2));color:var(--on);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px color-mix(in srgb,var(--ac) 35%,transparent)}
+.btn.ghost{background:none;border:1px solid var(--ac);color:var(--ac)}
+.hero{position:relative;overflow:hidden;padding:80px 0 70px;background:radial-gradient(ellipse at 70% 0,color-mix(in srgb,var(--ac2) 18%,transparent),transparent 60%),radial-gradient(ellipse at 10% 100%,color-mix(in srgb,var(--ac) 14%,transparent),transparent 55%)}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+@media(max-width:820px){.hero .wrap{grid-template-columns:1fr}}
+.tag{display:inline-block;font-size:12px;padding:4px 12px;border:1px solid var(--bd);border-radius:99px;color:var(--ac);margin-bottom:16px}
+h1{font-size:clamp(34px,6vw,56px);line-height:1.1;margin:0 0 16px}
+h1 span{background:linear-gradient(90deg,var(--ac),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--mut);font-size:18px;max-width:520px}
+.term{background:#05080c;border:1px solid var(--bd);border-radius:14px;box-shadow:0 20px 60px rgba(0,255,156,.08);overflow:hidden;color:#b9f5d8;font-size:13.5px}
+.term .bar{background:#0f1720;padding:8px 14px;display:flex;gap:6px}
+.term .bar i{width:10px;height:10px;border-radius:50%;background:#ff5f57}.term .bar i:nth-child(2){background:#febc2e}.term .bar i:nth-child(3){background:#28c840}
+.term pre{margin:0;padding:16px;min-height:210px;white-space:pre-wrap}
+.cur{display:inline-block;width:8px;height:15px;background:#00ff9c;vertical-align:middle;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.stats{display:flex;gap:28px;margin-top:28px;flex-wrap:wrap}
+.stats div b{display:block;font-size:24px;color:var(--ac)}.stats div{font-size:13px;color:var(--mut)}
+section{padding:70px 0}
+.alt{background:var(--bg2)}
+h2{font-size:clamp(26px,4vw,38px);margin:0 0 8px}
+.sub{color:var(--mut);margin:0 0 30px;max-width:600px}
+.filters{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.chip{padding:7px 16px;border-radius:99px;border:1px solid var(--bd);background:none;color:var(--mut);cursor:pointer;font:inherit;font-size:14px}
+.chip.on{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:8px;transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-4px);border-color:var(--ac)}
+.card .ic{font-size:28px}.card h3{margin:0;font-size:18px}.card p{margin:0;color:var(--mut);font-size:14px;flex:1}
+.meta{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mut)}
+.price{font-size:20px;font-weight:800;color:var(--ac)}
+.badge{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--bg2);border:1px solid var(--bd)}
+.pkg{border:1px solid var(--ac);border-radius:22px;padding:36px;background:linear-gradient(160deg,var(--card),var(--bg2));display:grid;grid-template-columns:1.3fr 1fr;gap:30px;box-shadow:0 0 60px color-mix(in srgb,var(--ac) 10%,transparent)}
+@media(max-width:760px){.pkg{grid-template-columns:1fr;padding:24px}}
+.pkg ul{list-style:none;padding:0;margin:14px 0}.pkg li{padding:5px 0;color:var(--mut)}.pkg li:before{content:"▸ ";color:var(--ac)}
+.pkg .big{font-size:44px;font-weight:800;color:var(--ac)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.step{padding:20px;border-left:3px solid var(--ac);background:var(--card);border-radius:0 12px 12px 0}
+.step b{color:var(--ac)}
+footer{padding:36px 0;border-top:1px solid var(--bd);color:var(--mut);font-size:14px;text-align:center}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;z-index:50;overflow-y:auto;padding:20px}
+.ov.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--bd);border-radius:18px;max-width:560px;width:100%;padding:26px;margin:auto}
+.modal h3{margin:0 0 4px;font-size:22px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media(max-width:520px){.f{grid-template-columns:1fr}}
+.f .full{grid-column:1/-1}
+label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px}
+input,select{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit;font-size:14px}
+input:focus,select:focus{outline:2px solid var(--ac);border-color:transparent}
+.pay{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:520px){.pay{grid-template-columns:repeat(2,1fr)}}
+.pm{padding:10px 4px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);cursor:pointer;font:inherit;font-size:13px;text-align:center}
+.pm.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,var(--bg));color:var(--ac);font-weight:700}
+.pbox{margin-top:12px;padding:14px;border-radius:10px;background:var(--bg);border:1px dashed var(--bd);font-size:13px;color:var(--mut)}
+.pbox .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.tot{display:flex;justify-content:space-between;margin:16px 0 10px;font-weight:700}
+.x{float:right;background:none;border:0;color:var(--mut);font-size:24px;cursor:pointer}
+.ok{text-align:center;padding:10px 0}.ok .big{font-size:50px}
+.err{color:#ff6b6b;font-size:13px;margin-top:8px;min-height:18px}
+.logo{display:flex;align-items:center;gap:10px}.logo img{width:38px;height:38px;border-radius:9px}.logo b{line-height:1.15}
+@media(max-width:700px){.logo{font-size:13px}}
+.contact{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.contact a{padding:8px 14px;border:1px solid var(--bd);border-radius:99px;color:var(--tx);font-size:14px}
+.contact a:hover{border-color:var(--ac);color:var(--ac)}
+</style><link rel="icon" id="fav"></head><body>
+<nav><div class="wrap"><a class="logo mono" href="#top"><img class="lg" alt="StartHub BootCamp logo"><b>The StartHub BootCamp Academy</b></a>
+<div class="links"><a href="#hacking">Hacking</a><a href="#coding">Programming</a><a href="#package">Full Package</a><a href="#how">How it works</a><a href="#support">Support</a></div>
+<a class="btn" href="#package" style="padding:8px 16px">Enrol now</a></div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+<div><span class="tag mono">● Live online classes · Kids &amp; Adults</span>
+<h1>Learn to <span>hack ethically</span> &amp; code like a pro.</h1>
+<p>Pick a skill, choose your own class schedule, pay your way, and graduate with a certificate and a shot at a remote tech internship.</p>
+<div style="display:flex;gap:12px;margin-top:22px;flex-wrap:wrap"><a class="btn" href="#hacking">Explore skills</a><a class="btn ghost" href="#package">Full hacking package</a></div>
+<div class="stats"><div><b>100%</b>Online</div><div><b>Certificate</b>on completion</div><div><b>Internship</b>with remote tech firms</div></div></div>
+<div class="term mono"><div class="bar"><i></i><i></i><i></i></div><pre id="t"></pre></div>
+</div></header>
+
+<!-- Ethical hacking section -->
+<section id="hacking"><div class="wrap"><h2>🛡️ Ethical Hacking Skills</h2>
+<p class="sub">Short, focused courses. Learn to think like an attacker so you can defend like a pro.</p>
+<div class="filters" data-g="hg"><button class="chip on" data-a="all">All</button><button class="chip" data-a="Adults">Adults</button><button class="chip" data-a="Kids">Kids</button></div>
+<div class="grid" id="hg"></div></div></section>
+
+<!-- Programming section -->
+<section id="coding" class="alt"><div class="wrap"><h2>💻 Programming Languages</h2>
+<p class="sub">From a first line of code to real projects you can show employers.</p>
+<div class="filters" data-g="cg"><button class="chip on" data-a="all">All</button><button class="chip" data-a="Adults">Adults</button><button class="chip" data-a="Kids">Kids</button></div>
+<div class="grid" id="cg"></div></div></section>
+
+<!-- Best Value Section -->
+<section id="package"><div class="wrap"><div class="pkg"><div>
+<span class="tag mono">★ BEST VALUE</span><h2>Full Ethical Hacking Package</h2>
+<p class="sub" style="margin-bottom:0">Everything from the short courses, combined into one guided path from beginner to job-ready.</p>
+<ul><li>Networking, Linux &amp; Kali from scratch</li><li>Web, Wi-Fi &amp; network penetration testing</li><li>OSINT, recon &amp; CTF challenges</li><li>Reporting like a real security professional</li><li>Mentor support &amp; capstone project</li><li>Certificate + remote internship placement support</li></ul></div>
+<div style="align-self:center;text-align:center"><div class="mono" id="pkOld" style="color:var(--mut);text-decoration:line-through"></div><div class="big" id="pkPrice">…</div><div id="pkUsd" style="color:var(--mut);margin-bottom:18px">12 weeks · live classes</div>
+<button class="btn" id="pkBtn" style="width:100%">Enrol in Full Package</button></div></div></div></section>
+
+<!-- How it works section -->
+<section id="how" class="alt"><div class="wrap"><h2>How it works</h2><p class="sub">Four steps from curious to certified.</p>
+<div class="steps"><div class="step"><b>01</b><br>Choose a skill or the full package</div><div class="step"><b>02</b><br>Register with your details &amp; pick class day/time</div><div class="step"><b>03</b><br>Pay via M-Pesa, card, crypto or Airtm</div><div class="step"><b>04</b><br>Learn live, earn your certificate &amp; internship shot</div></div></div></section>
+
+<!-- Support section -->
+<section id="support"><div class="wrap" style="text-align:center"><h2>💛 Support The StartHub BootCamp</h2>
+<p class="sub" style="margin:0 auto 22px">Every contribution helps us keep learning affordable and reach more young people with ethical hacking and coding skills. Thank you for believing in us.</p>
+<button class="btn" onclick="openDonate()">Support our bootcamp</button><p style="color:var(--mut);font-size:13px;margin-top:12px">Pay by M-Pesa, card or crypto. Your receipt downloads automatically.</p></div></section>
+
+<footer><div class="wrap">
+<img class="lg" alt="" style="width:72px;height:72px;border-radius:16px">
+<h3 style="margin:10px 0 0;color:var(--tx)">Contact us</h3>
+<div class="contact"><a href="tel:+254768578725">📞 +254 768 578 725</a><a href="tel:+254780502456">📞 +254 780 502 456</a><a href="https://wa.me/254768578725" target="_blank" rel="noopener">💬 WhatsApp: 0768 578 725</a><a href="https://wa.me/254780502456" target="_blank" rel="noopener">💬 WhatsApp: 0780 502 456</a><a href="mailto:starthubbootcamp@gmail.com">✉️ starthubbootcamp@gmail.com</a></div>
+<button class="btn" style="margin-top:18px" onclick="openDonate()">💛 Support our bootcamp</button>
+<div style="margin-top:22px">© 2026 The StartHub BootCamp Academy · All training is legal, ethical and for defensive purposes only.</div></div></footer>
+
+<div class="ov" id="ov"><div class="modal" id="mod"></div></div>
+
+<script>
+const LOGO="data:image/png;base64,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";document.querySelectorAll("img.lg").forEach(i=>i.src=LOGO);document.getElementById("fav").href=LOGO;
+// Courses and prices are loaded live from the server (edit them in /admin)
+let H=[],C=[],METHODS=['mpesa','card','crypto','airtm'];
+function draw(id,arr,f){document.getElementById(id).innerHTML=arr.filter(s=>f=='all'||s[3]==f).map(s=>{const i=arr.indexOf(s);return `<div class="card"><div class="ic">${s[0]}</div><h3>${s[1]}</h3><p>${s[2]}</p><div class="meta"><span class="badge">${s[3]}</span><span>${s[5]}</span></div><div class="meta"><span class="price">KES ${s[4].toLocaleString()}</span><button class="btn" style="padding:8px 16px" onclick="openM({n:'${s[1].replace(/'/g,"\\'")}',p:${s[4]}})">Enrol</button></div></div>`}).join('')}
+const rowOf=c=>[c.icon,c.name,c.description,c.audience,c.price,c.duration];
+async function loadCourses(){try{const d=await(await fetch('/api/courses')).json();R=d.rate||R;if(d.methods&&d.methods.length)METHODS=d.methods;
+H=d.courses.filter(c=>c.section=='hacking').map(rowOf);C=d.courses.filter(c=>c.section=='coding').map(rowOf);
+const p=d.courses.find(c=>c.section=='package');
+if(p){document.getElementById('pkOld').textContent=p.old_price?'KES '+p.old_price.toLocaleString():'';document.getElementById('pkPrice').textContent='KES '+p.price.toLocaleString();document.getElementById('pkUsd').textContent='≈ $'+Math.round(p.price/R)+' · 12 weeks · live classes';document.getElementById('pkBtn').onclick=()=>openM({n:p.name,p:p.price,pkg:1})}
+['hg','cg'].forEach(g=>{const f=document.querySelector('.filters[data-g="'+g+'"] .chip.on');draw(g,g=='hg'?H:C,f?f.dataset.a:'all')})}
+catch(e){['hg','cg'].forEach(g=>document.getElementById(g).innerHTML='<p class="sub">Courses could not be loaded. Please refresh the page.</p>')}}
+loadCourses();document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadCourses()});
+document.querySelectorAll('.filters').forEach(el=>el.onclick=e=>{const b=e.target.closest('.chip');if(!b)return;el.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));b.classList.add('on');const g=el.dataset.g;draw(g,g=='hg'?H:C,b.dataset.a)});
+// terminal
+const L=["$ whoami\nfuture-security-pro","$ nmap -sV target.lab\n22/tcp open ssh\n80/tcp open http","$ python3 scan.py --ethical\n[+] 3 vulnerabilities found\n[+] report.pdf generated","$ certificate --issue\n🎓 Certificate unlocked\n💼 Internship: remote tech co."];
+let li=0,ci=0,buf="";const T=document.getElementById('t');
+(function tick(){const s=L.join("\n\n");if(ci<=s.length){T.innerHTML=s.slice(0,ci).replace(/</g,'&lt;')+'<span class="cur"></span>';ci++;setTimeout(tick,ci%7?28:90)}})();
+// modal
+const D=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],TM=["8:00 AM","10:00 AM","1:00 PM","4:00 PM","6:00 PM","8:00 PM"];let R=130;
+let cur,pm="mpesa";
+function openM(c){cur=c;pm=METHODS[0]||"mpesa";render();document.getElementById('ov').classList.add('show')}
+function closeM(){document.getElementById('ov').classList.remove('show')}
+document.getElementById('ov').onclick=e=>{if(e.target.id=='ov')closeM()};
+const opt=a=>a.map(x=>`<option>${x}</option>`).join('');
+function payBox(){const m={mpesa:`You'll be taken to a secure Paystack page where you confirm your M-Pesa number and get a payment prompt (STK push) on your phone. Just enter your PIN to pay.`,card:`You'll be taken to a secure Paystack page to enter your card details. We never see or store your card number.`,crypto:`Pay in USDT / BTC / ETH. A wallet address and exact amount will be shown after you submit.<div class="row"><div><label>Coin</label><select id="co"><option>USDT (TRC20)</option><option>BTC</option><option>ETH</option></select></div><div></div></div>`,airtm:`Pay through your Airtm account.<div class="row"><div><label>Airtm email</label><input id="ae" type="email" placeholder="you@airtm.com"></div><div></div></div>`};return m[pm]}
+function render(){const usd=(cur.p/R).toFixed(2);document.getElementById('mod').innerHTML=`<button class="x" onclick="closeM()">×</button><h3>Enrol: ${cur.n}</h3><div style="color:var(--mut);font-size:14px">Fill in your details, choose your class time and pay.</div>
+<form id="fm" onsubmit="return go(event)"><div class="f">
+<div><label>Full name</label><input id="fn" required></div><div><label>Email</label><input id="em" type="email" required></div>
+<div><label>Location (city, country)</label><input id="lo" required></div><div><label>Phone / WhatsApp</label><input id="ph" required></div>
+<div><label>Learner type</label><select id="ty"><option>Adult</option><option>Kid (parent/guardian registers)</option></select></div><div><label>Preferred day</label><select id="dy">${opt(D)}</select></div>
+<div class="full"><label>Preferred time (East Africa Time)</label><select id="tm">${opt(TM)}</select></div></div>
+<div style="margin:16px 0 8px;font-weight:700">Payment method</div>
+<div class="pay">${[["mpesa","M-Pesa"],["card","Card"],["crypto","Crypto"],["airtm","Airtm"]].filter(a=>METHODS.includes(a[0])).map(a=>`<button type="button" class="pm ${pm==a[0]?'on':''}" onclick="pm='${a[0]}';keep();render();rest()">${a[1]}</button>`).join('')}</div>
+<div class="pbox">${payBox()}</div>
+<div class="tot"><span>Total</span><span class="price">KES ${cur.p.toLocaleString()} <small style="color:var(--mut);font-weight:400">≈ $${usd}</small></span></div>
+<button class="btn" style="width:100%">Pay &amp; Enrol</button><div class="err" id="er"></div></form>`}
+let sv={};function keep(){["fn","em","lo","ph","ty","dy","tm"].forEach(i=>sv[i]=document.getElementById(i).value)}
+function rest(){for(const i in sv)document.getElementById(i).value=sv[i]}
+async function go(e){e.preventDefault();const g=i=>document.getElementById(i),er=g('er');
+const body={name:g('fn').value,email:g('em').value,location:g('lo').value,phone:g('ph').value,learner_type:g('ty').value,day:g('dy').value,time:g('tm').value,course:cur.n,expected:cur.p,method:pm,mpesa_phone:''};
+er.textContent='Processing…';
+try{const r=await fetch('/api/enroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Something went wrong');
+if(d.redirect_url){location.href=d.redirect_url;return false}
+showDone(d)}catch(x){er.textContent=x.message}return false}
+function showDone(d){document.getElementById('mod').innerHTML=`<button class="x" onclick="closeM()">×</button><div class="ok"><div class="big" id="ic">${d.noPoll?'✅':'⏳'}</div><h3 id="st">${d.message}</h3><p style="color:var(--mut)">Reference: <b class="mono">${d.ref}</b></p><div id="rc" style="margin:12px 0"></div><button class="btn ghost" onclick="closeM()">Close</button></div>`;if(!d.noPoll)poll(d.ref,0)}
+async function poll(ref,n){if(n>45)return;try{const d=await(await fetch('/api/status/'+ref)).json();if(d.status=='paid'){document.getElementById('ic').textContent='🎉';document.getElementById('st').textContent=d.course=='Donation'?'Thank you for your support! Payment received.':'Payment received! Your spot is confirmed.';const u='/api/receipt/'+encodeURIComponent(ref);document.getElementById('rc').innerHTML='<a class="btn" href="'+u+'" download>⬇ Download receipt</a>';const a=document.createElement('a');a.href=u;a.download='';document.body.appendChild(a);a.click();a.remove();return}if(d.status=='failed'){document.getElementById('ic').textContent='⚠️';document.getElementById('st').textContent='Payment failed or was cancelled. Please try again.';return}}catch(e){}setTimeout(()=>poll(ref,n+1),4000)}
+const qr=new URLSearchParams(location.search).get('ref');if(qr){openM({n:'Payment',p:0});showDone({ref:qr,message:'Confirming your payment…'})}
+// ---- donations ----
+const PRE=[500,1000,2500,5000,10000];let dAmt=1000,ds={};
+function openDonate(){pm=METHODS[0]||"mpesa";dAmt=1000;ds={};rd();document.getElementById('ov').classList.add('show')}
+function dk(){["dn","de","dp","dm","da"].forEach(i=>{const e=document.getElementById(i);if(e)ds[i]=e.value})}
+function rr(){for(const i in ds){const e=document.getElementById(i);if(e)e.value=ds[i]}}
+function rd(){document.getElementById('mod').innerHTML=`<button class="x" onclick="closeM()">×</button><h3>💛 Support our bootcamp</h3><div style="color:var(--mut);font-size:14px">Choose an amount, pay your way, and your receipt downloads straight after.</div>
+<form onsubmit="return goDonate(event)"><div class="pay" style="margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(92px,1fr))">${PRE.map(a=>`<button type="button" class="pm ${dAmt==a?'on':''}" onclick="dk();dAmt=${a};ds.da='';rd();rr()">KES ${a.toLocaleString()}</button>`).join('')}</div>
+<div class="f"><div class="full"><label>Or enter your own amount (KES)</label><input id="da" type="number" min="50" placeholder="e.g. 1500" oninput="dAmt=+this.value||0;document.getElementById('dtot').textContent='KES '+dAmt.toLocaleString()"></div>
+<div><label>Your name (optional)</label><input id="dn"></div><div><label>Email (for your receipt)</label><input id="de" type="email" required></div>
+<div class="full"><label>Phone (optional)</label><input id="dp"></div><div class="full"><label>Message (optional)</label><input id="dm" maxlength="200" placeholder="A few kind words for the team"></div></div>
+<div style="margin:16px 0 8px;font-weight:700">Payment method</div>
+<div class="pay">${[["mpesa","M-Pesa"],["card","Card"],["crypto","Crypto"],["airtm","Airtm"]].filter(a=>METHODS.includes(a[0])).map(a=>`<button type="button" class="pm ${pm==a[0]?'on':''}" onclick="dk();pm='${a[0]}';rd();rr()">${a[1]}</button>`).join('')}</div>
+<div class="pbox">${payBox()}</div>
+<div class="tot"><span>Total</span><span class="price" id="dtot">KES ${dAmt.toLocaleString()}</span></div>
+<button class="btn" style="width:100%">Donate</button><div class="err" id="er"></div></form>`}
+async function goDonate(e){e.preventDefault();const g=i=>document.getElementById(i),er=g('er');
+if(!(dAmt>=50)){er.textContent='Please choose or enter an amount of at least KES 50.';return false}
+er.textContent='Processing…';
+try{const r=await fetch('/api/donate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:g('dn').value,email:g('de').value,phone:g('dp').value,message:g('dm').value,amount:dAmt,method:pm})});
+const d=await r.json();if(!r.ok)throw new Error(d.error||'Something went wrong');if(d.redirect_url){location.href=d.redirect_url;return false}showDone(d)}catch(x){er.textContent=x.message}return false}
+function goDemo(e){e.preventDefault();const g=i=>document.getElementById(i);const er=g('er');
+if(pm=='mpesa'&&!/^(\+?254|0)?[17]\d{8}$/.test(g('pn').value.replace(/\s/g,''))){er.textContent='Enter a valid Kenyan M-Pesa number.';return false}
+if(pm=='card'&&(g('cn').value.replace(/\s/g,'').length<13||!g('ce').value||g('cv').value.length<3)){er.textContent='Check your card details.';return false}
+if(pm=='airtm'&&!g('ae').value){er.textContent='Enter your Airtm email.';return false}
+const ref='NBA-'+Math.random().toString(36).slice(2,8).toUpperCase(),n=g('fn').value;
+const extra=pm=='crypto'?`<div class="pbox" style="text-align:left">Send <b>$${(cur.p/R).toFixed(2)}</b> in ${g('co').value} to your wallet address (shown here once crypto checkout is connected). Use reference <b>${ref}</b>.</div>`:'';
+document.getElementById('mod').innerHTML=`<button class="x" onclick="closeM()">×</button><div class="ok"><div class="big">🎉</div><h3>You're in, ${n.split(' ')[0]}!</h3><p style="color:var(--mut)">${cur.n}<br>Class: <b>${g('dy').value}s at ${g('tm').value}</b><br>Reference: <b class="mono">${ref}</b></p>${extra}<p style="color:var(--mut);font-size:13px">A confirmation will be sent to ${g('em').value}.</p><button class="btn" onclick="closeM()">Done</button></div>`;sv={};return false}
+</script></body></html>
