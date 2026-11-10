@@ -30,7 +30,7 @@ td{padding:12px;border-bottom:1px solid var(--bd);vertical-align:top}
 tr:last-child td{border-bottom:0}
 .m{color:var(--mut);font-size:12.5px}
 .b{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid}
-.b.paid{color:var(--ok);border-color:var(--ok)}.b.pending{color:var(--wa);border-color:var(--wa)}.b.failed{color:var(--bad);border-color:var(--bad)}
+.b.paid{color:var(--ok);border-color:var(--ok)}.b.pending{color:var(--wa);border-color:var(--wa)}.b.failed{color:var(--bad);border-color:var(--bad)}.b.scheduled{color:var(--mut);border-color:var(--mut)}
 .empty{padding:40px;text-align:center;color:var(--mut)}
 </style></head><body>
 
@@ -47,6 +47,7 @@ tr:last-child td{border-bottom:0}
   <header>
     <img src="/logo.png" alt=""><h1>Enrolments</h1>
     <button class="btn ghost sm" id="rf">↻ Refresh</button>
+    <button class="btn ghost sm" id="rm">✉ Send reminders now</button>
     <button class="btn ghost sm" id="csv">⬇ Export CSV</button>
     <button class="btn ghost sm" id="out">Log out</button>
   </header>
@@ -55,10 +56,11 @@ tr:last-child td{border-bottom:0}
   <div class="stats" id="stats"></div>
   <div class="bar">
     <input id="q" placeholder="Search name, email, phone, course, reference…">
-    <select id="fs"><option value="">All statuses</option><option>paid</option><option>pending</option><option>failed</option></select>
+    <select id="fs"><option value="">All statuses</option><option>paid</option><option>pending</option><option>scheduled</option><option>failed</option></select>
     <select id="fc"><option value="">All courses</option></select>
+    <select id="fa"><option value="">All access</option><option value="active">access: active</option><option value="paused">access: paused</option><option value="full">access: full</option><option value="none">access: not started</option></select>
   </div>
-  <div class="tw"><table><thead><tr><th>Date</th><th>Student</th><th>Contact</th><th>Course</th><th>Class slot</th><th>Amount</th><th>Payment</th><th>Status</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  <div class="tw"><table><thead><tr><th>Date</th><th>Student</th><th>Contact</th><th>Course</th><th>Class slot</th><th>Amount</th><th>Payment</th><th>Status</th><th>Learning access</th><th></th></tr></thead><tbody id="rows"></tbody></table>
   <div id="empty" class="empty" style="display:none">No enrolments to show.</div></div></div>
   <div id="tabD" style="display:none">
     <div class="stats" id="dstats"></div>
@@ -67,7 +69,7 @@ tr:last-child td{border-bottom:0}
   </div>
   <div id="tabC" style="display:none">
     <p class="m">Change a price (or anything else) and press <b>Save</b>. It updates on the live website straight away. Untick <b>Show</b> to hide a course without deleting it. "Old price" shows as a crossed-out price (used by the package).</p>
-    <div class="tw"><table style="min-width:1050px"><thead><tr><th>Icon</th><th>Course name</th><th>Description</th><th>For</th><th>Section</th><th>Price (KES)</th><th>Old price</th><th>Length</th><th>Show</th><th></th></tr></thead><tbody id="crows"></tbody></table></div>
+    <div class="tw"><table style="min-width:1250px"><thead><tr><th>Icon</th><th>Course name</th><th>Description</th><th>For</th><th>Section</th><th>Price (KES)</th><th>Old price</th><th>Length</th><th>Class link</th><th>Show</th><th></th></tr></thead><tbody id="crows"></tbody></table></div>
     <h3 style="margin:26px 0 10px">Add a new course</h3>
     <div class="bar"><select id="nc_s"><option value="hacking">Ethical hacking</option><option value="coding">Programming</option></select><select id="nc_a"><option>Adults</option><option>Kids</option></select>
       <input id="nc_i" placeholder="Icon (emoji)" style="max-width:130px;min-width:110px"><input id="nc_n" placeholder="Course name"><input id="nc_d" placeholder="Short description"><input id="nc_p" type="number" placeholder="Price KES" style="max-width:140px;min-width:110px"><input id="nc_t" placeholder="Length e.g. 4 wks" style="max-width:150px;min-width:120px"><button class="btn" id="addc">Add course</button></div>
@@ -87,25 +89,28 @@ async function load(){DATA=await api('/api/admin/enrollments');$('login').style.
   $('fc').innerHTML='<option value="">All courses</option>'+cs.map(c=>`<option ${c===cur?'selected':''}>${esc(c)}</option>`).join('');render()}
 const when=s=>new Date(s.replace(' ','T')+'Z').toLocaleString('en-KE',{timeZone:'Africa/Nairobi',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 const wa=p=>{let d=String(p).replace(/\D/g,'');if(d.startsWith('0'))d='254'+d.slice(1);return 'https://wa.me/'+d};
+function accessTag(d){if(d.inst_no>1)return '';const u=d.access_until?new Date(d.access_until.replace(' ','T')+'Z').toLocaleDateString('en-KE',{timeZone:'Africa/Nairobi',day:'numeric',month:'short'}):'';return {full:'<span class="b paid">full access</span>',active:'<span class="b pending">active</span><div class="m">until '+u+'</div>',paused:'<span class="b failed">PAUSED</span><div class="m">since '+u+'</div>',none:'<span class="b scheduled">not started</span>'}[d.access]||''}
+function dueTag(d){if(!(d.inst_total>1)||d.status==='paid'||!d.due_at)return '';const t=new Date(d.due_at.replace(' ','T')+'Z');const late=t<new Date();return `<div class="m" ${late?'style="color:var(--bad)"':''}>${late?'overdue · ':'due '}${t.toLocaleDateString('en-KE',{timeZone:'Africa/Nairobi',day:'numeric',month:'short'})}</div>`}
 function render(){
   const q=$('q').value.toLowerCase(),fs=$('fs').value,fc=$('fc').value;
-  const rows=DATA.filter(d=>(!fs||d.status===fs)&&(!fc||d.course===fc)&&(!q||Object.values(d).join(' ').toLowerCase().includes(q)));
+  const rows=DATA.filter(d=>(!fs||d.status===fs)&&(!fc||d.course===fc)&&(!$('fa').value||d.access===$('fa').value)&&(!q||Object.values(d).join(' ').toLowerCase().includes(q)));
   const paid=DATA.filter(d=>d.status==='paid');
-  $('stats').innerHTML=[['Total enrolments',DATA.length],['Paid',paid.length],['Awaiting payment',DATA.filter(d=>d.status==='pending').length],['Revenue (KES)',paid.reduce((a,d)=>a+d.amount_kes,0).toLocaleString()]].map(s=>`<div class="stat"><b>${s[1]}</b><span>${s[0]}</span></div>`).join('');
+  $('stats').innerHTML=[['Total enrolments',new Set(DATA.map(d=>d.plan_ref||d.ref)).size],['Paid',paid.length],['Awaiting payment',DATA.filter(d=>d.status==='pending').length],['Access paused',new Set(DATA.filter(d=>d.access==='paused').map(d=>d.plan_ref)).size],['Revenue (KES)',paid.reduce((a,d)=>a+d.amount_kes,0).toLocaleString()]].map(s=>`<div class="stat"><b>${s[1]}</b><span>${s[0]}</span></div>`).join('');
   $('rows').innerHTML=rows.map(d=>`<tr>
-    <td>${when(d.created_at)}<div class="m mono">${esc(d.ref)}</div></td>
+    <td>${when(d.created_at)}<div class="m mono">${esc(d.ref)}</div>${d.token&&d.plan_ref?`<a class="m" href="/my.html?o=${esc(d.plan_ref)}&t=${esc(d.token)}" target="_blank" rel="noopener">student dashboard ↗</a>`:''}</td>
     <td><b>${esc(d.name)}</b><div class="m">${esc(d.learner_type)}<br>${esc(d.location)}</div></td>
     <td><a href="mailto:${esc(d.email)}">${esc(d.email)}</a><div class="m"><a href="tel:${esc(d.phone)}">${esc(d.phone)}</a> · <a href="${wa(d.phone)}" target="_blank" rel="noopener">WhatsApp</a></div></td>
-    <td>${esc(d.course)}</td><td>${esc(d.day)}<div class="m">${esc(d.time)}</div></td>
+    <td>${esc(d.course)}${d.inst_total>1?` <span class="b">${d.inst_no}/${d.inst_total}</span>`:''}</td><td>${esc(d.day)}<div class="m">${esc(d.time)}</div></td>
     <td><b>KES ${d.amount_kes.toLocaleString()}</b></td>
     <td>${esc(d.method)}<div class="m">${esc(d.receipt||'')}</div></td>
-    <td><span class="b ${esc(d.status)}">${esc(d.status)}</span></td>
+    <td><span class="b ${esc(d.status)}">${esc(d.status)}</span>${dueTag(d)}</td><td>${accessTag(d)}</td>
     <td>${d.status!=='paid'?`<button class="btn sm" data-ref="${esc(d.ref)}" data-n="${esc(d.name)}">Mark paid</button>`:`<a href="/api/receipt/${esc(d.ref)}">⬇ Receipt</a>`}</td></tr>`).join('');
   $('empty').style.display=rows.length?'none':'block'}
 document.addEventListener('click',async e=>{const b=e.target.closest('button[data-ref]');if(!b)return;
   if(!confirm(`Confirm that ${b.dataset.n} has paid? A confirmation email will be sent to them.`))return;
   try{await api('/api/admin/confirm/'+b.dataset.ref,{method:'POST'});await load();if($('tabD').style.display!=='none')await loadD()}catch(x){alert(x.message)}});
-['q','fs','fc'].forEach(i=>$(i).addEventListener('input',render));
+['q','fs','fc','fa'].forEach(i=>$(i).addEventListener('input',render));
+$('rm').onclick=async()=>{try{const r=await api('/api/admin/reminders/run',{method:'POST'});alert(`Reminders checked.\nOverdue: ${r.overdue}\nDue today: ${r.today}\nDue in 3 days: ${r.soon}\n`+(r.digest_sent?'A summary email was sent to you.':'Nothing needed attention, so no email was sent.'))}catch(x){alert(x.message)}};
 $('rf').onclick=()=>load().catch(x=>alert(x.message));$('out').onclick=logout;
 $('csv').onclick=()=>{const h=['Date','Reference','Name','Email','Phone','Location','Learner type','Course','Day','Time','Amount KES','Method','Receipt','Status'];
   const c=v=>{v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};
@@ -125,6 +130,7 @@ function renderC(){$('crows').innerHTML=CRS.map(c=>`<tr data-id="${c.id}">
 <td><input data-f="price" type="number" min="50" value="${c.price}" style="width:100px"></td>
 <td><input data-f="old_price" type="number" value="${c.old_price||''}" style="width:90px"></td>
 <td><input data-f="duration" value="${esc(c.duration)}" style="width:80px"></td>
+<td><input data-f="class_link" value="${esc(c.class_link||'')}" placeholder="https://meet… or WhatsApp link" style="width:200px"></td>
 <td style="text-align:center"><input data-f="active" type="checkbox" ${c.active?'checked':''} style="width:auto"></td>
 <td style="white-space:nowrap"><button class="btn sm" data-save="${c.id}">Save</button> <button class="btn ghost sm" data-del="${c.id}">🗑</button></td></tr>`).join('')}
 document.addEventListener('click',async e=>{const sv=e.target.closest('[data-save]'),dl=e.target.closest('[data-del]');

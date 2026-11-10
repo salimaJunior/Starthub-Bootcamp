@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>My enrolment · The StartHub BootCamp Academy</title>
+<style>
+:root{--bg:#070b10;--bg2:#0d141d;--card:#111b27;--tx:#e6f1ff;--mut:#8aa0b8;--ac:#00ff9c;--ac2:#00c8ff;--bd:#1e2d3f;--on:#03140c;--wa:#ffc857;--bad:#ff6b6b}
+@media (prefers-color-scheme:light){:root{--bg:#f4f8fc;--bg2:#e8eff7;--card:#fff;--tx:#0b1a2b;--mut:#4d6178;--ac:#00935a;--ac2:#0077a8;--bd:#d3deea;--on:#fff;--wa:#b07a00;--bad:#d03a3a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+a{color:var(--ac2);text-decoration:none}
+.wrap{max-width:720px;margin:auto;padding:20px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px}header img{width:44px;height:44px;border-radius:10px}header h1{font-size:20px;margin:0;flex:1}
+.btn{border:0;cursor:pointer;font:inherit;font-weight:700;padding:11px 20px;border-radius:10px;background:linear-gradient(135deg,var(--ac),var(--ac2));color:var(--on);display:inline-block}
+.btn.ghost{background:none;border:1px solid var(--bd);color:var(--tx);font-weight:600}.btn.sm{padding:6px 14px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:16px}
+.m{color:var(--mut);font-size:13.5px}
+.bar{height:12px;border-radius:99px;background:var(--bg2);border:1px solid var(--bd);overflow:hidden;margin:12px 0 6px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:99px;transition:width .6s}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--bd)}.row:first-of-type{border-top:0}
+.no{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:var(--bg2);border:1px solid var(--bd);flex:none}
+.row.next .no{border-color:var(--ac);color:var(--ac)}
+.row .mid{flex:1;min-width:0}
+.b{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid}
+.b.paid{color:var(--ac);border-color:var(--ac)}.b.pending{color:var(--wa);border-color:var(--wa)}.b.scheduled{color:var(--mut);border-color:var(--mut)}.b.failed{color:var(--bad);border-color:var(--bad)}
+.pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0}
+.pm{padding:10px 4px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);cursor:pointer;font:inherit;font-size:14px}
+.pm.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 12%,var(--bg));color:var(--ac);font-weight:700}
+.msg{margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--bg2);border:1px dashed var(--bd);font-size:14px}
+.err{color:var(--bad)}
+</style></head><body>
+<div class="wrap">
+  <header><img src="/logo.png" alt=""><h1>My enrolment</h1><a class="btn ghost sm" href="/">← Back to site</a></header>
+  <div id="view"><p class="m">Loading…</p></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const qs=new URLSearchParams(location.search);let O=qs.get('o'),T=qs.get('t'),D=null,PM=null;
+const NAMES={mpesa:'M-Pesa',card:'Card',crypto:'Crypto',airtm:'Airtm'};
+const fmt=n=>'KES '+Number(n).toLocaleString();
+const day=s=>s?new Date(s.replace(' ','T')+'Z').toLocaleDateString('en-KE',{timeZone:'Africa/Nairobi',day:'numeric',month:'short',year:'numeric'}):'';
+const view=h=>{$('view').innerHTML=h};
+function orders(){try{return JSON.parse(localStorage.getItem('sh_orders')||'[]')}catch(e){return[]}}
+function remember(){try{let l=orders().filter(x=>x.o!==O);l.unshift({o:O,t:T,c:D.course});localStorage.setItem('sh_orders',JSON.stringify(l.slice(0,10)))}catch(e){}}
+function none(){view(`<div class="card"><h2 style="margin-top:0">We couldn't find that enrolment</h2><p class="m">Open the personal link from your receipt email, or the dashboard button shown after you enrolled. If you've lost it, message us on WhatsApp <a href="https://wa.me/254768578725">+254 768 578 725</a> or email <a href="mailto:starthubbootcamp@gmail.com">starthubbootcamp@gmail.com</a> and we'll resend it.</p></div>`)}
+async function main(){
+  if(!O||!T){const l=orders();
+    if(l.length===1){O=l[0].o;T=l[0].t;history.replaceState(null,'','?o='+O+'&t='+T)}
+    else if(l.length>1){return view(`<div class="card"><h2 style="margin-top:0">Your enrolments on this device</h2>${l.map(x=>`<p><a class="btn ghost sm" href="/my.html?o=${esc(x.o)}&t=${esc(x.t)}">${esc(x.c||'Enrolment')}</a></p>`).join('')}</div>`)}
+    else return none()}
+  await load()}
+async function load(){
+  const r=await fetch('/api/my/'+encodeURIComponent(O)+'?t='+encodeURIComponent(T));
+  if(r.status===429)return view('<p class="err">Too many requests. Please wait a minute and refresh.</p>');
+  if(!r.ok)return none();
+  D=await r.json();remember();PM=PM&&D.methods.includes(PM)?PM:D.methods[0];draw()}
+function banner(){const a=D.access||{};let h='';
+  if(a.state==='none')return '<div class="msg" style="margin:0 0 16px">Pay your first installment to start learning.</div>';
+  if(a.state==='paused')return `<div class="card" style="border-color:var(--bad)"><b class="err">⏸ Learning access paused</b><div class="m">Installment ${a.next.no} (${fmt(a.next.amount)}) was due on ${day(a.next.due)}. Pay it below and your access resumes right away.</div></div>`;
+  const msg=a.state==='full'?'✅ Fully paid. You have full access to the course.':`✅ You can learn now. Your access is active until <b>${day(a.until)}</b>. Pay installment ${a.next.no} (${fmt(a.next.amount)}) by then to keep learning.`;
+  h=D.class_link?`<div style="margin-top:12px"><a class="btn" href="${esc(D.class_link)}" target="_blank" rel="noopener">Join class</a></div>`:'<div class="m" style="margin-top:6px">Your class details will be shared with you on WhatsApp.</div>';
+  return `<div class="card" style="border-color:var(--ac)"><div>${msg}</div>${h}</div>`}
+function draw(){
+  const pct=D.total?Math.round(D.paid*100/D.total):0, next=D.installments.find(i=>i.status!=='paid'), now=new Date();
+  view(`<div class="card"><div class="m">Hello ${esc(D.name.split(' ')[0])}</div><h2 style="margin:2px 0 0">${esc(D.course)}</h2>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="m"><b style="color:var(--tx)">${fmt(D.paid)}</b> paid of ${fmt(D.total)} · ${D.balance>0?`balance <b style="color:var(--tx)">${fmt(D.balance)}</b>`:'fully paid 🎉'}</div></div>
+  ${banner()}
+  <div class="card"><h3 style="margin:0 0 6px">Payments</h3>
+    ${D.installments.map(i=>{const late=i.status!=='paid'&&i.due&&new Date(i.due.replace(' ','T')+'Z')<now&&i.of>1;
+      return `<div class="row ${next&&next.ref===i.ref?'next':''}"><div class="no">${i.no}</div>
+      <div class="mid"><b>${fmt(i.amount)}</b> <span class="m">${i.of>1?'installment '+i.no+' of '+i.of:'full payment'}</span><div class="m">${i.status==='paid'?'Paid '+day(i.paid_at)+(i.method?' · '+esc(NAMES[i.method]||i.method):''):(i.of>1?(late?'<span class="err">Overdue, was due ':'Due ')+day(i.due)+(late?'</span>':''):'')}</div></div>
+      <div style="text-align:right"><span class="b ${esc(i.status)}">${esc(i.status)}</span>${i.status==='paid'?`<div><a class="m" href="/api/receipt/${esc(i.ref)}" download>⬇ Receipt</a></div>`:''}</div></div>`}).join('')}
+  </div>
+  ${next?`<div class="card"><h3 style="margin:0">Pay ${next.of>1?'installment '+next.no:'now'}: ${fmt(next.amount)}</h3>
+    <div class="m">Choose how you'd like to pay.</div>
+    <div class="pay">${D.methods.map(m=>`<button class="pm ${PM===m?'on':''}" onclick="PM='${m}';draw()">${esc(NAMES[m]||m)}</button>`).join('')}</div>
+    <button class="btn" style="width:100%" id="go" onclick="pay()">Pay ${fmt(next.amount)}</button><div id="msg"></div></div>`:''}
+  <p class="m">Keep this page's link private, it opens your payment details. Questions? WhatsApp <a href="https://wa.me/254768578725">+254 768 578 725</a>.</p>`)}
+async function pay(){
+  const b=$('go');b.disabled=true;b.textContent='Starting payment…';
+  try{const r=await fetch('/api/my/'+encodeURIComponent(O)+'/pay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:T,method:PM})});
+    const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Something went wrong. Please try again.');
+    if(d.redirect_url){location.href=d.redirect_url;return}
+    $('msg').innerHTML='<div class="msg">'+esc(d.message||'Payment started.')+'</div>';b.textContent='Waiting for payment…';
+    if(!d.noPoll)poll(d.ref,0);else b.style.display='none'}
+  catch(x){$('msg').innerHTML='<div class="msg err">'+esc(x.message)+'</div>';b.disabled=false;b.textContent='Try again'}}
+async function poll(ref,n){if(n>45)return;
+  try{const d=await(await fetch('/api/status/'+ref)).json();
+    if(d.status==='paid'){const a=document.createElement('a');a.href='/api/receipt/'+encodeURIComponent(ref);a.download='';document.body.appendChild(a);a.click();a.remove();await load();$('view').insertAdjacentHTML('afterbegin','<div class="msg">🎉 Payment received. Your receipt is downloading.</div>');return}
+    if(d.status==='failed'){$('msg').innerHTML='<div class="msg err">The payment did not go through. Please try again.</div>';$('go').disabled=false;$('go').textContent='Try again';return}}catch(e){}
+  setTimeout(()=>poll(ref,n+1),4000)}
+main().catch(()=>none());
+</script></body></html>
